@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       config-file:
-        description: "Pfad zur commitlint-Konfiguration im aufrufenden Repo"
+        description: "Path to the commitlint configuration in the calling repo"
         required: false
         type: string
         default: "./commitlint.config.cjs"
