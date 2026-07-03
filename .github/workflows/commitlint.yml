@@ -1,0 +1,22 @@
+name: Commit Lint (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      config-file:
+        description: "Pfad zur commitlint-Konfiguration im aufrufenden Repo"
+        required: false
+        type: string
+        default: "./commitlint.config.cjs"
+
+jobs:
+  commitlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: wagoid/commitlint-github-action@v6
+        with:
+          configFile: ${{ inputs.config-file }}

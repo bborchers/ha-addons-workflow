@@ -1,0 +1,70 @@
+name: Build & Deploy Addon (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      addon-path:
+        description: "Pfad zum Addon-Verzeichnis (enthält Dockerfile/build.yaml)"
+        required: true
+        type: string
+      slug:
+        description: "Addon-Slug, wird als GHCR-Image-Name verwendet"
+        required: true
+        type: string
+    secrets:
+      dispatch-token:
+        description: "PAT mit Contents:write auf dem zentralen ha-addons-Repo"
+        required: true
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [aarch64, amd64]
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Version aus Release-Tag ableiten
+        id: version
+        run: |
+          VERSION="${{ github.event.release.tag_name }}"
+          echo "version=${VERSION#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Login bei GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Push mit Home Assistant Builder
+        uses: home-assistant/builder@d495815c3dbc76eb08ac6a92d530406f7ad05ebd
+        with:
+          args: |
+            --${{ matrix.arch }} \
+            --target /data/${{ inputs.addon-path }} \
+            --image "${{ inputs.slug }}/{arch}" \
+            --docker-hub "ghcr.io/${{ github.repository_owner }}" \
+            --version "${{ steps.version.outputs.version }}"
+        env:
+          BUILDER_LOGIN_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+          BUILDER_LOGIN_USERNAME: ${{ github.actor }}
+
+  dispatch:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Zentrales Repository benachrichtigen
+        run: |
+          curl -sSf -X POST \
+            -H "Authorization: Bearer ${{ secrets.dispatch-token }}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository_owner }}/ha-addons/dispatches" \
+            -d "{\"event_type\":\"addon-release\",\"client_payload\":{\"slug\":\"${{ inputs.slug }}\",\"version\":\"${{ needs.build.outputs.version }}\"}}"
