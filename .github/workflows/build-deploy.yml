@@ -8,7 +8,7 @@ on:
         required: true
         type: string
       slug:
-        description: "Addon-Slug, wird als GHCR-Image-Name verwendet"
+        description: "Addon-Slug (z.B. 'grafana'); GHCR-Image wird als ha-addons-<slug>/{arch} benannt"
         required: true
         type: string
     secrets:
@@ -50,7 +50,7 @@ jobs:
           args: |
             --${{ matrix.arch }} \
             --target /data/${{ inputs.addon-path }} \
-            --image "${{ inputs.slug }}/{arch}" \
+            --image "ha-addons-${{ inputs.slug }}/{arch}" \
             --docker-hub "ghcr.io/${{ github.repository_owner }}" \
             --version "${{ steps.version.outputs.version }}"
         env:
