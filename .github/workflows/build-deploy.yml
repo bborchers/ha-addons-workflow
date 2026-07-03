@@ -45,7 +45,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build & Push mit Home Assistant Builder
-        uses: home-assistant/builder@d495815c3dbc76eb08ac6a92d530406f7ad05ebd
+        uses: home-assistant/builder@2026.02.1
         with:
           args: |
             --${{ matrix.arch }} \
