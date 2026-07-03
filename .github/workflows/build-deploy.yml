@@ -4,16 +4,16 @@ on:
   workflow_call:
     inputs:
       addon-path:
-        description: "Pfad zum Addon-Verzeichnis (enthält Dockerfile/build.yaml)"
+        description: "Path to the add-on directory (contains Dockerfile/build.yaml)"
         required: true
         type: string
       slug:
-        description: "Addon-Slug (z.B. 'grafana'); GHCR-Image wird als ha-addons-<slug>/{arch} benannt"
+        description: "Add-on slug (e.g. 'grafana'); the GHCR image is named ha-addons-<slug>/{arch}"
         required: true
         type: string
     secrets:
       dispatch-token:
-        description: "PAT mit Contents:write auf dem zentralen ha-addons-Repo"
+        description: "PAT with Contents:write on the central ha-addons repo"
         required: true
 
 permissions:
@@ -31,20 +31,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Version aus Release-Tag ableiten
+      - name: Derive version from release tag
         id: version
         run: |
           VERSION="${{ github.event.release.tag_name }}"
           echo "version=${VERSION#v}" >> "$GITHUB_OUTPUT"
 
-      - name: Login bei GHCR
+      - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build & Push mit Home Assistant Builder
+      - name: Build & push with Home Assistant Builder
         uses: home-assistant/builder@2026.02.1
         with:
           args: |
@@ -61,7 +61,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: Zentrales Repository benachrichtigen
+      - name: Notify central repository
         run: |
           curl -sSf -X POST \
             -H "Authorization: Bearer ${{ secrets.dispatch-token }}" \

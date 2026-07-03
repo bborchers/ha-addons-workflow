@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       addon-path:
-        description: "Pfad zum Addon-Verzeichnis (enthält config.yaml)"
+        description: "Path to the add-on directory (contains config.yaml)"
         required: true
         type: string
 

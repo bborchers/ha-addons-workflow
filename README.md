@@ -1,20 +1,20 @@
 # ha-addons-workflow
 
-Wiederverwendbare GitHub-Actions-Workflows (`workflow_call`) für die Home-Assistant-Add-on-Repositories von Bjoern Borchers:
+Reusable GitHub Actions workflows (`workflow_call`) for Bjoern Borchers's Home Assistant add-on repositories:
 
-- [ha-addons](https://github.com/bborchers/ha-addons) — zentrales Repository (wird in Home Assistant hinzugefügt)
-- [ha-addons-grafana](https://github.com/bborchers/ha-addons-grafana) — Build-Repo für das Grafana-Addon
+- [ha-addons](https://github.com/bborchers/ha-addons) — central repository (added to Home Assistant)
+- [ha-addons-grafana](https://github.com/bborchers/ha-addons-grafana) — build repo for the Grafana add-on
 
 ## Workflows
 
-| Datei | Zweck |
+| File | Purpose |
 |---|---|
-| `.github/workflows/lint.yml` | Validiert eine Addon-`config.yaml` via `frenck/action-addon-linter` |
-| `.github/workflows/commitlint.yml` | Prüft Commit-Messages gegen Conventional Commits |
-| `.github/workflows/release-drafter.yml` | Pflegt einen Draft-Release mit automatisch berechneter nächster Version |
-| `.github/workflows/build-deploy.yml` | Baut ein Addon multi-arch, pusht es nach GHCR und informiert `ha-addons` per `repository_dispatch` |
+| `.github/workflows/lint.yml` | Validates an add-on's `config.yaml` via `frenck/action-addon-linter` |
+| `.github/workflows/commitlint.yml` | Checks commit messages against Conventional Commits |
+| `.github/workflows/release-drafter.yml` | Maintains a draft release with an automatically computed next version |
+| `.github/workflows/build-deploy.yml` | Builds an add-on multi-arch, pushes it to GHCR, and notifies `ha-addons` via `repository_dispatch` |
 
-Aufruf-Beispiel aus einem Build-Repo:
+Example call from a build repo:
 
 ```yaml
 jobs:
