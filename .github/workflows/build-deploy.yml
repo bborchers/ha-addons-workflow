@@ -1,0 +1,82 @@
+name: Build & Deploy Addon (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      addon-path:
+        description: "Path to the add-on directory (contains Dockerfile/build.yaml)"
+        required: true
+        type: string
+      slug:
+        description: "Add-on slug (e.g. 'grafana'); the GHCR image is named ha-addons-<slug>/{arch}"
+        required: true
+        type: string
+      version:
+        description: "Optional release version, used when deployment runs in the publishing workflow"
+        required: false
+        default: ""
+        type: string
+    secrets:
+      dispatch-token:
+        description: "PAT with Contents:write on the central ha-addons repo"
+        required: true
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [aarch64, amd64]
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Derive version from release tag
+        id: version
+        run: |
+          VERSION="${{ inputs.version }}"
+          if [ -z "$VERSION" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+          fi
+          if [ -z "$VERSION" ]; then
+            echo "No release version was provided" >&2
+            exit 1
+          fi
+          echo "version=${VERSION#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push with Home Assistant Builder
+        uses: home-assistant/builder@2026.02.1
+        with:
+          args: |
+            --${{ matrix.arch }} \
+            --target /data/${{ inputs.addon-path }} \
+            --image "ha-addons-${{ inputs.slug }}/{arch}" \
+            --docker-hub "ghcr.io/${{ github.repository_owner }}" \
+            --version "${{ steps.version.outputs.version }}"
+        env:
+          BUILDER_LOGIN_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+          BUILDER_LOGIN_USERNAME: ${{ github.actor }}
+
+  dispatch:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify central repository
+        run: |
+          curl -sSf -X POST \
+            -H "Authorization: Bearer ${{ secrets.dispatch-token }}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository_owner }}/ha-addons/dispatches" \
+            -d "{\"event_type\":\"addon-release\",\"client_payload\":{\"slug\":\"${{ inputs.slug }}\",\"version\":\"${{ needs.build.outputs.version }}\"}}"
